@@ -21,16 +21,15 @@ object TopologyFactory {
     val organizationTable: GlobalKTable[String, JValue] = builder.globalTable[String, JValue](organizationTopic, Consumed.`with`(Serdes.String, jsonSerde))
 
     kStream
-      .filter((_, v) => v.resourceType.contains(ResourceType.organization))
-      .to(organizationTopic)
-
-    kStream
       .split
       .branch(
         selectOrganization,
         Branched.withConsumer(
           ks => {
-            ks.to(organizationTopic)(Produced.valueSerde(jsonSerde))
+            ks.peek((key, data) => {
+              println(s"processing ${data.resourceType.getOrElse("Unknown")} resource with key $key")
+              MetricsReporter.reportMessageProcessed(data.resourceType.getOrElse("Unknown"))
+            }).to(organizationTopic)(Produced.valueSerde(jsonSerde))
           }
         )
       )
@@ -44,15 +43,14 @@ object TopologyFactory {
         )
       )
       .defaultBranch(
-        Branched.withFunction(
-          _.peek((_, data) =>
-            MetricsReporter.reportMessageProcessed(data.resourceType.getOrElse("Unknown"))
-          )
-        )
       )
       .forEach {
         case (_, branch) =>
           branch
+            .peek((key, data) => {
+              println(s"get resource ${data.resourceType.getOrElse("Unknown")} key: $key")
+              MetricsReporter.reportMessageProcessed(data.resourceType.getOrElse("Unknown"))
+            })
             .to(resourceOutputTopic, Produced.`with`(Serdes.String, jsonSerde))
       }
 
@@ -68,6 +66,7 @@ object TopologyFactory {
   private def joinPatientToOrganization(patient: JValue, organizationJson: JValue): JValue = {
     // todo: handle situation when organization does not have name
     val organizationName = organizationJson \ "name"
+    println(organizationName)
     patient.upsertJsonProperty("managingOrganization.name", organizationName)
   }
 

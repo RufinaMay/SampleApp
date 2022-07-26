@@ -17,4 +17,9 @@
     <root level="info">
         <appender-ref ref="ASYNC"/>
     </root>
+
+    <logger name="kafka" level="ERROR">
+        <appender-ref ref="STDOUTAppender" />
+    </logger>
+
 </configuration>

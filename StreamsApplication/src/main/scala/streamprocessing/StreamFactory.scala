@@ -19,6 +19,7 @@ object StreamFactory {
   def streamProperties(config: Config): Properties = {
     val properties = new Properties()
     properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, config.getString("kafka.bootstrapServer"))
+    properties.put(StreamsConfig.APPLICATION_ID_CONFIG, config.getString("application.name"))
     properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, classOf[StringSerializer])
     properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, classOf[StringSerializer])
     properties.put(ProducerConfig.ACKS_CONFIG, "all")

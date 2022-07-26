@@ -20,7 +20,7 @@ object Json4sFhirExtensions {
     }
 
     def organizationId: Option[String] = {
-      (value \ "managingOrganization" \ "reference").extractOpt[String]
+      (value \ "managingOrganization" \ "reference").extractOpt[String].flatMap(_.split("/").lastOption)
     }
 
   }
